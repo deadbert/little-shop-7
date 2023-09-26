@@ -67,8 +67,19 @@ RSpec.describe "Bulk Discounts index page", type: :feature do
           click_on "Delete"
         end
 
-        expect(page).to_not have_content(@discount_1.threshold)
-        expect(page).to_not have_content(@discount_1.discount)
+        expect(page).to_not have_content("Threshold: #{@discount_1.threshold}")
+        expect(page).to_not have_content("Discount: #{@discount_1.discount}")
+      end
+
+      it "I can only delete a bulk discount if there are no pending invoices that qualify for said discount" do
+
+        visit "/merchants/#{@merchant1.id}/bulk_discounts"
+
+        within(".discount_id_#{@discount_3.id}") do
+          click_on "Delete"
+        end
+
+        expect(page).to have_content("Error: this discount can't be modified or deleted while there are pending invoices")
       end
     end
   end

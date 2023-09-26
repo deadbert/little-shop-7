@@ -10,14 +10,26 @@ class BulkDiscountsController < ApplicationController
 
   def create
     @merchant = Merchant.find(params[:merchant_id])
-    @merchant.bulk_discounts.create!(discount_params)
-    redirect_to merchant_bulk_discounts_path(@merchant)
+    discount = @merchant.bulk_discounts.create(discount_params)
+    if discount.save
+      redirect_to merchant_bulk_discounts_path(@merchant)
+    else
+      flash[:alert] = "Error: #{error_message(discount.errors)}"
+      render 'new'
+    end
+    
   end
 
   def destroy
     @merchant = Merchant.find(params[:merchant_id])
-    BulkDiscount.find(params[:id]).delete
-    redirect_to merchant_bulk_discounts_path(@merchant)
+    bulk_discount = BulkDiscount.find(params[:id])
+    if bulk_discount.can_be_modified?
+      bulk_discount.delete
+      redirect_to merchant_bulk_discounts_path(@merchant)
+    else
+      flash[:alert] = "Error: this discount can't be modified or deleted while there are pending invoices"
+      redirect_to merchant_bulk_discounts_path(@merchant)
+    end
   end
 
   def show
@@ -33,8 +45,13 @@ class BulkDiscountsController < ApplicationController
   def update
     @merchant = Merchant.find(params[:merchant_id])
     @bulk_discount = BulkDiscount.find(params[:id])
-    @bulk_discount.update!(discount_params)
-    redirect_to "/merchants/#{@merchant.id}/bulk_discounts/#{@bulk_discount.id}"
+    if @bulk_discount.update(discount_params)
+      redirect_to "/merchants/#{@merchant.id}/bulk_discounts/#{@bulk_discount.id}"  
+    else
+      flash[:alert] = "Error: #{error_message(@bulk_discount.errors)}"
+      render 'edit'
+    end
+    
   end
 
   private
